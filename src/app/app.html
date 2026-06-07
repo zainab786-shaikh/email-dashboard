@@ -1,0 +1,290 @@
+<div class="dashboard-wrapper" [class.light-mode]="!isDarkMode()">
+  <!-- Header Bar -->
+  <header class="header">
+    <div class="brand">
+      <div class="brand-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
+          <path d="M160-160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h640q33 0 56.5 23.5T920-720v480q0-33-23.5-56.5T840-160H160Zm320-280L160-640v400h640v-400L480-440Zm0-80 320-200H160l320 200ZM160-640v-80 480-400Z"/>
+        </svg>
+      </div>
+      <h1>ResourceMail <span class="logo-accent">Hub</span></h1>
+    </div>
+
+    <!-- Search and Controls -->
+    <div class="controls">
+      <div class="search-box">
+        <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="currentColor">
+          <path d="M784-120 532-372q-30 24-74 38t-90 14q-117 0-198.5-81.5T88-600q0-117 81.5-198.5T368-880q117 0 198.5 81.5T648-600q0 49-14 90t-38 74l252 252-64 64ZM368-292q128 0 218-90t90-218q0-128-90-218t-218-90q-128 0-218 90t-90 218q0 128 90 218t218 90Z"/>
+        </svg>
+        <input 
+          type="text" 
+          placeholder="Search subjects, content, or senders..." 
+          [ngModel]="searchTerm()" 
+          (ngModelChange)="searchTerm.set($event)"
+        />
+      </div>
+
+      <div class="filter-dropdown">
+        <select [ngModel]="resourceFilter()" (ngModelChange)="resourceFilter.set($event)">
+          <option value="all">All Resources</option>
+          <option value="youtube">YouTube Videos</option>
+          <option value="pdfs">PDF Documents</option>
+          <option value="websites">Web Links</option>
+          <option value="attachments">File Attachments</option>
+        </select>
+      </div>
+
+      <!-- Hidden Emails Restore & Toggle controls -->
+      @if (hiddenEmailKeys().size > 0) {
+        <button class="restore-all-btn" (click)="restoreAllEmails()" title="Restore all hidden emails">
+          Restore All ({{ hiddenEmailKeys().size }})
+        </button>
+        <label class="show-hidden-checkbox">
+          <input type="checkbox" [ngModel]="showHidden()" (ngModelChange)="showHidden.set($event)" />
+          Show Removed Only
+        </label>
+      }
+
+      <!-- Theme Switcher -->
+      <button class="theme-toggle" (click)="toggleTheme()" title="Toggle Dark/Light Mode">
+        @if (isDarkMode()) {
+          <svg xmlns="http://www.w3.org/2000/svg" height="22px" viewBox="0 -960 960 960" width="22px" fill="currentColor">
+            <path d="M480-360q50 0 85-35t35-85q0-50-35-85t-85-35q-50 0-85 35t-35 85q0 50 35 85t85 35Zm0 80q-83 0-141.5-58.5T280-480q0-83 58.5-141.5T480-680q83 0 141.5 58.5T680-480q0 83-58.5 141.5T480-280ZM200-440H40v-80h160v80Zm720 0H760v-80h160v80ZM440-760v-160h80v160h-80Zm0 720v-160h80v160h-80ZM256-650l-101-97 57-57 96 101-52 53Zm492 496-97-101 53-52 101 97-57 57ZM202-186l97-101 52 53-101 97-48-49Zm496-492 101-97 57 57-97 101-61-61ZM480-480Z"/>
+          </svg>
+        } @else {
+          <svg xmlns="http://www.w3.org/2000/svg" height="22px" viewBox="0 -960 960 960" width="22px" fill="currentColor">
+            <path d="M480-120q-150 0-255-105T120-480q0-150 105-255t255-105q14 0 27.5 1t26.5 3q-41 29-65.5 75.5T440-660q0 85 54 143t136 58q12 0 24-1t22-3q-21 51-64.5 83.5T512-340q-4 0-7.5.5t-6.5.5q-8 0-14-1t-13-1q-12 59-4 117t31 108q-12 3-23.5 4t-23.5 1Z"/>
+          </svg>
+        }
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Grid Layout -->
+  <div class="main-container">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h3>Categories</h3>
+      </div>
+      <nav class="category-list">
+        @for (cat of categories() | keyvalue; track cat.key) {
+          <div class="category-item" [class.active]="selectedCategory() === cat.key">
+            <div class="category-row" (click)="selectCategory(cat.key)">
+              <span class="category-title">{{ cat.key }}</span>
+              <button class="accordion-toggle" (click)="toggleCategoryAccordion(cat.key, $event)">
+                <svg [class.rotated]="expandedCategories()[cat.key]" xmlns="http://www.w3.org/2000/svg" height="20px" viewBox="0 -960 960 960" width="20px" fill="currentColor">
+                  <path d="M480-344 240-584l56-56 184 184 184-184 56 56-240 240Z"/>
+                </svg>
+              </button>
+            </div>
+
+            <!-- Subcategory Accordion List -->
+            @if (expandedCategories()[cat.key]) {
+              <div class="subcategory-list">
+                @for (sub of cat.value; track sub) {
+                  <button 
+                    class="subcategory-btn" 
+                    [class.active]="selectedCategory() === cat.key && selectedSubcategory() === sub"
+                    (click)="selectCategory(cat.key); selectSubcategory(sub)"
+                  >
+                    <span class="dot"></span>
+                    {{ sub }}
+                  </button>
+                }
+              </div>
+            }
+          </div>
+        }
+      </nav>
+    </aside>
+
+    <!-- Content Area -->
+    <main class="content-pane">
+      <!-- Breadcrumb / Active Header -->
+      <div class="content-header">
+        <div class="breadcrumbs">
+          <span class="parent">{{ selectedCategory() || 'Select Category' }}</span>
+          @if (selectedSubcategory()) {
+            <span class="separator">/</span>
+            <span class="child">{{ selectedSubcategory() }}</span>
+          }
+        </div>
+        <div class="result-count">
+          Found <strong>{{ filteredEmails().length }}</strong> resource emails
+        </div>
+      </div>
+
+      <!-- Email Card Grid -->
+      @if (filteredEmails().length > 0) {
+        <div class="email-grid">
+          @for (email of filteredEmails(); track email) {
+            <div class="email-card">
+              <div class="card-header">
+                <div class="card-header-top">
+                  <div class="sender-info">
+                    <span class="from-tag" [title]="email.from">{{ email.from }}</span>
+                    <span class="date-tag">{{ email.date | date:'medium' }}</span>
+                  </div>
+                  <label class="hide-checkbox-label" title="Remove this email from view">
+                    <input type="checkbox" [checked]="isHidden(email)" (click)="toggleHideEmail(email, $event)" />
+                    <span>Remove</span>
+                  </label>
+                </div>
+                <h3 class="card-title">{{ email.subject }}</h3>
+              </div>
+
+              <div class="card-body">
+                <p class="body-preview">
+                  {{ email.clean_body ? (email.clean_body | slice:0:220) + (email.clean_body.length > 220 ? '...' : '') : 'No description text available.' }}
+                </p>
+              </div>
+
+              <!-- Resource Redirect Area -->
+              <div class="card-resources">
+                @for (res of getParsedResources(email); track res.url) {
+                  <button 
+                    class="res-btn" 
+                    [ngClass]="{
+                      'youtube-btn': res.type === 'youtube',
+                      'pdf-btn': res.type === 'pdf',
+                      'article-btn': res.type === 'web',
+                      'web-btn': res.type === 'github',
+                      'course-btn': res.type === 'course'
+                    }" 
+                    (click)="redirectToLink(res.url)"
+                  >
+                    @if (res.type === 'youtube') {
+                      <svg class="btn-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                        <path d="M23.498 6.163a3.003 3.003 0 0 0-2.11-2.108C19.518 3.5 12 3.5 12 3.5s-7.517 0-9.388.555A3.003 3.003 0 0 0 .502 6.163C0 8.07 0 12 0 12s0 3.93.502 5.837a3.003 3.003 0 0 0 2.11 2.108C4.483 20.5 12 20.5 12 20.5s7.518 0 9.388-.555a3.003 3.003 0 0 0 2.11-2.108C24 15.93 24 12 24 12s0-3.93-.502-5.837zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                      </svg>
+                    } @else if (res.type === 'pdf') {
+                      <svg class="btn-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                      </svg>
+                    } @else {
+                      <svg class="btn-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2 2V8a2 2 0 0 1 2-2h6"></path>
+                        <polyline points="15 3 21 3 21 9"></polyline>
+                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                      </svg>
+                    }
+                    {{ res.label }}
+                  </button>
+                }
+
+                <!-- Attachments (PDF or general files) -->
+                @if (email.attachments && email.attachments.length > 0) {
+                  @for (att of email.attachments; track att.name) {
+                    <button class="res-btn attachment-btn" title="Open Attachment">
+                      <svg class="btn-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                      </svg>
+                      {{ att.name }} ({{ formatBytes(att.size) }})
+                    </button>
+                  }
+                }
+              </div>
+
+              <div class="card-footer">
+                <button class="detail-trigger-btn" (click)="openEmail(email)">
+                  View Full Content
+                  <svg xmlns="http://www.w3.org/2000/svg" height="18px" viewBox="0 -960 960 960" width="18px" fill="currentColor">
+                    <path d="m560-240-56-56 144-144H160v-80h488L504-664l56-56 240 240-240 240Z"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="empty-state">
+          <svg xmlns="http://www.w3.org/2000/svg" height="64px" viewBox="0 -960 960 960" width="64px" fill="currentColor">
+            <path d="M280-80q-33 0-56.5-23.5T200-160v-40H80v-320q0-50 35-85t85-35h560q50 0 85 35t35 85v320H760v40q0 33-23.5 56.5T680-80H280Zm0-80h400v-40H280v40Zm-80-120h560v-320q0-17-11.5-28.5T720-640H240q-17 0-28.5 11.5T200-600v320ZM240-640h480v-80H240v80Z"/>
+          </svg>
+          <h3>No emails found matching your query</h3>
+          <p>Try clearing your search filters or choosing a different subcategory.</p>
+        </div>
+      }
+    </main>
+  </div>
+
+  <!-- Detail Modal -->
+  @if (activeEmail()) {
+    <div class="modal-overlay" (click)="closeEmail()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <header class="modal-header">
+          <div>
+            <span class="modal-meta">From: {{ activeEmail()?.from }}</span>
+            <span class="modal-meta-sep">•</span>
+            <span class="modal-meta">{{ activeEmail()?.date | date:'medium' }}</span>
+          </div>
+          <button class="close-btn" (click)="closeEmail()">
+            <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
+              <path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/>
+            </svg>
+          </button>
+        </header>
+
+        <div class="modal-content">
+          <h2 class="modal-title">{{ activeEmail()?.subject }}</h2>
+          <div class="modal-tags">
+            <span class="tag-cat">{{ activeEmail()?.category }}</span>
+            <span class="tag-subcat">{{ activeEmail()?.subcategory }}</span>
+          </div>
+
+          <div class="modal-body-section">
+            <h4>Email Message</h4>
+            <div class="email-body-text">
+              {{ activeEmail()?.clean_body || '(No message content)' }}
+            </div>
+          </div>
+
+          <!-- Resources Section in Modal -->
+          <div class="modal-resources-section">
+            <h4>Resource Directory</h4>
+            
+            <div class="res-grid">
+              @for (res of getParsedResources(activeEmail()!); track res.url) {
+                <div class="res-item">
+                  <span class="res-url" [title]="res.url">{{ res.url }}</span>
+                  <button 
+                    class="res-action-btn" 
+                    [ngClass]="{
+                      'youtube-btn': res.type === 'youtube',
+                      'pdf-btn': res.type === 'pdf',
+                      'web-btn': res.type === 'web' || res.type === 'github',
+                      'course-btn': res.type === 'course'
+                    }" 
+                    (click)="redirectToLink(res.url)"
+                  >
+                    {{ res.label }}
+                  </button>
+                </div>
+              }
+
+              <!-- Attachments -->
+              @if (activeEmail()!.attachments && activeEmail()!.attachments.length > 0) {
+                <div class="res-group">
+                  <h5>File Attachments</h5>
+                  @for (att of activeEmail()!.attachments; track att.name) {
+                    <div class="res-item">
+                      <div class="res-attachment-info">
+                        <span class="att-name">{{ att.name }}</span>
+                        <span class="att-size">{{ formatBytes(att.size) }}</span>
+                      </div>
+                      <button class="res-action-btn attachment-btn">Open File</button>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>
