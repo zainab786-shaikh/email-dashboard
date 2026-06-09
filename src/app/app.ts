@@ -40,6 +40,9 @@ export class App implements OnInit {
   // Dark mode
   isDarkMode = signal<boolean>(true);
 
+  // Mobile sidebar visibility
+  isSidebarOpen = signal<boolean>(false);
+
   // Computed: get subcategory list for current category
   currentSubcategories = computed(() => {
     const cat = this.selectedCategory();
@@ -138,6 +141,8 @@ export class App implements OnInit {
     } else {
       this.selectedSubcategory.set('');
     }
+    // Close sidebar on mobile selection
+    this.isSidebarOpen.set(false);
   }
 
   toggleCategoryAccordion(category: string, event: Event) {
@@ -150,6 +155,16 @@ export class App implements OnInit {
 
   selectSubcategory(subcategory: string) {
     this.selectedSubcategory.set(subcategory);
+    // Close sidebar on mobile selection
+    this.isSidebarOpen.set(false);
+  }
+
+  toggleSidebar() {
+    this.isSidebarOpen.update(open => !open);
+  }
+
+  closeSidebar() {
+    this.isSidebarOpen.set(false);
   }
 
   openEmail(email: Email) {
@@ -183,24 +198,19 @@ export class App implements OnInit {
       urls.add(trimmed);
       
       let type = 'web';
-      let label = 'Open Link';
       
       const lower = trimmed.toLowerCase();
       if (lower.includes('youtube.com') || lower.includes('youtu.be')) {
         type = 'youtube';
-        label = 'Watch Video';
       } else if (lower.endsWith('.pdf') || lower.includes('.pdf') || lower.includes('/pdf/')) {
         type = 'pdf';
-        label = 'Open PDF';
       } else if (lower.includes('github.com')) {
         type = 'github';
-        label = 'View Code';
       } else if (lower.includes('udemy.com') || lower.includes('pluralsight.com') || lower.includes('course')) {
         type = 'course';
-        label = 'Go to Course';
       }
       
-      resources.push({ url: trimmed, type, label });
+      resources.push({ url: trimmed, type, label: trimmed });
     };
 
     // 1. Add links from json object arrays
